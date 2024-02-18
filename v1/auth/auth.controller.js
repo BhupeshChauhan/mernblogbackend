@@ -1,6 +1,7 @@
-const User = require("./../model/user.model");
+const User = require("../model/user.model");
 const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
+const ModulePermissions = require("../model/modulePermissions.model");
 
 //jwt sign token function
 const signToken = (id) => {
@@ -10,7 +11,7 @@ const signToken = (id) => {
 };
 
 //sign up a new user
-exports.signup = async (req, res, next) => {
+const signup = async (req, res, next) => {
   try {
     const newUser = await User.create({
       firstname: req.body.firstname,
@@ -18,7 +19,7 @@ exports.signup = async (req, res, next) => {
       email: req.body.email,
       password: req.body.password,
     });
-    
+
     //assign token to user
     const token = signToken(newUser._id);
 
@@ -39,7 +40,7 @@ exports.signup = async (req, res, next) => {
 };
 
 //log in a user
-exports.login = async (req, res, next) => {
+const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     //check if user provided email and password
@@ -48,25 +49,32 @@ exports.login = async (req, res, next) => {
       return next(new Error("Please provide email and password"));
     }
     //check if user exist in the database and compare passwords
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ "personal_info.email": email });
     if (!user && !(await user.isValidPassword(password, user.password))) {
       res.status(400).json("Incorrect email or password");
       return next(new Error("Incorrect email or password"));
     }
-     //assign toke to user
+    //assign toke to user
     const token = signToken(user._id);
+
+    const modulePermissionsData = await ModulePermissions.findOne({
+      id: user.roleId,
+    });
 
     res.status(200).json({
       status: "success",
-      token,
+      user: { user, token, modulePermissions: modulePermissionsData },
     });
   } catch (err) {
-    throw err;
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
   }
 };
 
 //create an authenticate middleware that will protect routes
-exports.authenticate = async (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     let token;
     //Check if token was passed in the header and then retrieve
@@ -95,4 +103,10 @@ exports.authenticate = async (req, res, next) => {
   } catch (err) {
     res.json(err);
   }
+};
+
+module.exports = {
+  signup,
+  login,
+  authenticate,
 };

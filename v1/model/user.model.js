@@ -3,36 +3,9 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 const Schema = mongoose.Schema;
 
-let profile_imgs_name_list = [
-  "Garfield",
-  "Tinkerbell",
-  "Annie",
-  "Loki",
-  "Cleo",
-  "Angel",
-  "Bob",
-  "Mia",
-  "Coco",
-  "Gracie",
-  "Bear",
-  "Bella",
-  "Abby",
-  "Harley",
-  "Cali",
-  "Leo",
-  "Luna",
-  "Jack",
-  "Felix",
-  "Kiki",
-];
-let profile_imgs_collections_list = [
-  "notionists-neutral",
-  "adventurer-neutral",
-  "fun-emoji",
-];
-
 const UserSchema = mongoose.Schema(
   {
+    id: String,
     personal_info: {
       fullname: {
         type: String,
@@ -63,17 +36,9 @@ const UserSchema = mongoose.Schema(
       },
       profile_img: {
         type: String,
-        default: () => {
-          return `https://api.dicebear.com/6.x/${
-            profile_imgs_collections_list[
-              Math.floor(Math.random() * profile_imgs_collections_list.length)
-            ]
-          }/svg?seed=${
-            profile_imgs_name_list[
-              Math.floor(Math.random() * profile_imgs_name_list.length)
-            ]
-          }`;
-        },
+      },
+      inActive: {
+        type: Boolean,
       },
     },
     social_links: {
@@ -116,6 +81,13 @@ const UserSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    client: {
+      type: Boolean,
+      required: true,
+    },
+    roleId: {
+      type: Number,
+    },
     blogs: {
       type: [Schema.Types.ObjectId],
       ref: "blogs",
@@ -132,7 +104,7 @@ const UserSchema = mongoose.Schema(
 //add a pre-hook function to the UserSchema. This function gets called before the user info is stored in the database
 UserSchema.pre("save", async function (next) {
   //hash incoming password before saving to db
-  this.password = await bcrypt.hash(this.password, 12);
+  this.personal_info.password = await bcrypt.hash(this.personal_info.password, 12);
   next();
 });
 //This method will chain a function that compares and validates the password.

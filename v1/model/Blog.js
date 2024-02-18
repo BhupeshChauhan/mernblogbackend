@@ -1,4 +1,5 @@
-import mongoose, { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 const blogSchema = mongoose.Schema({
 
@@ -67,4 +68,5 @@ const blogSchema = mongoose.Schema({
 
 })
 
-export default mongoose.model("blogs", blogSchema);
+const Blog = mongoose.model.blogs || mongoose.model("blogs", blogSchema);
+module.exports = Blog;

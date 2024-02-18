@@ -1,8 +1,9 @@
+const Blog = require("../model/Blog");
 const postService = require("../services/post.service");
 
 const getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find({ state: "published" });
+    const posts = await Blog.find({ state: "published" });
 
     res.status(200).json({
       status: "success",
