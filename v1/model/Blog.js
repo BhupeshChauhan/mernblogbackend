@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const blogSchema = mongoose.Schema({
 
-    blog_id: {
+    id: {
         type: String,
         required: true,
         unique: true,
@@ -18,7 +18,6 @@ const blogSchema = mongoose.Schema({
     },
     des: {
         type: String,
-        maxlength: 200,
         // required: true
     },
     content: {
@@ -29,10 +28,27 @@ const blogSchema = mongoose.Schema({
         type: [String],
         // required: true
     },
+    categories: {
+        type: [String],
+    },
+    feature: {
+        type: [String],
+    },
+    visible: {
+        type: [String],
+    },
+    slug: {
+        type: String,
+        // required: true,
+    },
+    excerpt: {
+        type: String,
+        // required: true,
+    },
     author: {
         type: Schema.Types.ObjectId,
         required: true,
-        ref: 'users'
+        ref: 'User'
     },
     activity: {
         total_likes: {
@@ -59,7 +75,8 @@ const blogSchema = mongoose.Schema({
     draft: {
         type: Boolean,
         default: false
-    }
+    },
+    inActive: Boolean
 }, 
 { 
     timestamps: {
@@ -68,5 +85,5 @@ const blogSchema = mongoose.Schema({
 
 })
 
-const Blog = mongoose.model.blogs || mongoose.model("blogs", blogSchema);
+const Blog =  mongoose.model("blogs", blogSchema);
 module.exports = Blog;

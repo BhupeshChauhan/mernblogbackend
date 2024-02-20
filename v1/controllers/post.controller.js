@@ -1,9 +1,9 @@
 const Blog = require("../model/Blog");
-const postService = require("../services/post.service");
+const { validatePayload } = require("../utils");
 
 const getAllPosts = async (req, res) => {
   try {
-    const posts = await Blog.find({ state: "published" });
+    const posts = await Blog.find();
 
     res.status(200).json({
       status: "success",
@@ -14,11 +14,177 @@ const getAllPosts = async (req, res) => {
   }
 };
 
+const getAllDraftPosts = async (req, res) => {
+  try {
+    const posts = await Blog.find({ draft: true });
+
+    res.status(200).json({
+      status: "success",
+      posts,
+    });
+  } catch (err) {
+    throw err;
+  }
+};
+
+const getLatestPosts = async (req, res) => {
+  try {
+    const {page} = req.body
+    const maxLimit = 5;
+    const posts = await Blog.find({ draft: false });
+    await Blog.find({ draft: false })
+      .populate(
+        "author",
+        "personal_info.profile_img personal_info.username personal_info.fullname"
+      )
+      .sort({ publishedAt: -1 })
+      .select("id title des banner activity categories publishedAt")
+      .skip((page - 1) * maxLimit)
+      .limit(maxLimit)
+      .then((blogs) => {
+        res.status(200).json({
+          status: "success",
+          response: {
+            blogs,
+            total_length: posts.length,
+          },
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({
+          status: "error",
+          message: "Internal Server Error",
+        });
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const getTrendingPosts = async (req, res) => {
+  try {
+    const maxLimit = 5;
+    await Blog.find({ draft: false })
+      .populate(
+        "author",
+        "personal_info.profile_img personal_info.username personal_info.fullname"
+      )
+      .sort({ publishedAt: -1, 'activity.total_reads': -1, 'activity.total_likes': -1 })
+      .select("id title publishedAt")
+      .limit(maxLimit)
+      .then((blogs) => {
+        res.status(200).json({
+          status: "success",
+          blogs,
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({
+          status: "error",
+          message: "Internal Server Error",
+        });
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const getPostsByCategory = async (req, res) => {
+  try {
+    const {category, page} = req.body
+    const filterQuery = { draft: false, categories: category }
+    const maxLimit = 5;
+    const posts = await Blog.find(filterQuery);
+    await Blog.find(filterQuery)
+      .populate(
+        "author",
+        "personal_info.profile_img personal_info.username personal_info.fullname"
+      )
+      .sort({ publishedAt: -1 })
+      .select("id title des banner activity categories publishedAt")
+      .skip((page - 1) * maxLimit)
+      .limit(maxLimit)
+      .then((blogs) => {
+        res.status(200).json({
+          status: "success",
+          response: {
+            blogs,
+            total_length: posts.length,
+          },
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({
+          status: "error",
+          message: "Internal Server Error",
+        });
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const getSearchByQuery = async (req, res) => {
+  try {
+    const {query, page} = req.body
+    const filterQuery = { draft: false, title: new RegExp(query, 'i') }
+    const maxLimit = 5;
+    const posts = await Blog.find(filterQuery);
+    await Blog.find(filterQuery)
+      .populate(
+        "author",
+        "personal_info.profile_img personal_info.username personal_info.fullname"
+      )
+      .sort({ publishedAt: -1 })
+      .select("id title des banner activity categories publishedAt")
+      .skip((page - 1) * maxLimit)
+      .limit(maxLimit)
+      .then((blogs) => {
+        res.status(200).json({
+          status: "success",
+          response: {
+            blogs,
+            total_length: posts.length,
+          },
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({
+          status: "error",
+          message: "Internal Server Error",
+        });
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 const getOnePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.postId)
-      .where("state")
-      .eq("published");
+    const post = await Blog.findById(req.params.postsId).populate(
+        "author",
+        "personal_info.profile_img personal_info.username personal_info.fullname"
+      );
 
     if (!post) {
       return res.status(404).json({
@@ -27,7 +193,7 @@ const getOnePost = async (req, res) => {
       });
     } else {
       //increment the `readCount` property
-      post.readCount === 0 ? post.readCount++ : post.readCount++;
+      post.activity.total_reads++;
       await post.save();
     }
 
@@ -36,37 +202,67 @@ const getOnePost = async (req, res) => {
       post,
     });
   } catch (err) {
-    throw err;
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
   }
 };
 
 const createNewPost = async (req, res) => {
   try {
-    const { title, description, tags, body } = req.body;
-
-    //calculate read time of post from the body passed in
-    const wpm = 225; //wpm => word per minute
-    const numberOfWords = body.trim().split(/\s+/).length;
-    const readTime = Math.ceil(numberOfWords / wpm);
-
-    //get author name and author Id
-    let { firstname, lastname } = req.user;
-    let author = `${firstname} ${lastname}`;
-    let authorId = req.user._id;
-    const post = await Post.create({
+    const {
       title,
-      description,
+      banner,
+      content,
       tags,
-      body,
+      categories,
+      des,
       author,
-      authorId,
-      readTime,
+      excerpt,
+      visible,
+      slug,
+      feature,
+    } = req.body;
+    const requiredFields = [
+      "title",
+      "banner",
+      "content",
+      "tags",
+      "categories",
+      "des",
+      "author",
+      "excerpt",
+      "visible",
+      "slug",
+      "feature",
+    ];
+    const validate = validatePayload(req.body, requiredFields);
+    if (!validate?.payloadIsCurrect) {
+      return {
+        status: 400,
+        message: `Missing required fields: ${validate.missingFields}`,
+      };
+    }
+    const BlogData = await Blog.find();
+    const post = await Blog.create({
+      id: BlogData.length + 1,
+      title,
+      banner,
+      des,
+      content,
+      categories,
+      tags,
+      author,
+      excerpt,
+      visible,
+      slug,
+      feature,
+      draft: false,
     });
 
-    //add the new created post to 'posts' array property on the user document
-    let user = await User.findById(req.user._id);
-    user.posts.push(post._id);
-    await user.save(); //save changes made to the user doc
+    await post.save(); //save changes made to the user doc
 
     //send back response
     res.status(201).json({
@@ -74,66 +270,264 @@ const createNewPost = async (req, res) => {
       post,
     });
   } catch (err) {
-    throw err;
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
   }
 };
 
-const updateOnePost = async (req, res) => {
-  const { state, body } = req.body;
+const createNewDraftPost = async (req, res) => {
   try {
-    const post = await Post.findByIdAndUpdate(
-      req.params.postId,
-      {
-        $set: { state, body },
-      },
-      { new: true }
-    );
-    //check if post belongs to the user initiatin the request
-    if (post.authorId.toString() !== req.user._id) {
-      return res.status(401).json({
-        status: "Fail",
-        message: `You can only update a post you created!`,
-      });
+    const {
+      title,
+      banner,
+      content,
+      tags,
+      categories,
+      des,
+      author,
+      excerpt,
+      visible,
+      slug,
+      feature,
+    } = req.body;
+    const requiredFields = [
+      "title",
+      "banner",
+      "content",
+      "tags",
+      "categories",
+      "des",
+      "author",
+      "excerpt",
+      "visible",
+      "slug",
+      "feature",
+    ];
+    const validate = validatePayload(req.body, requiredFields);
+    if (!validate?.payloadIsCurrect) {
+      return {
+        status: 400,
+        message: `Missing required fields: ${validate.missingFields}`,
+      };
     }
-    res.status(200).json({
+    const BlogData = await Blog.find();
+    const post = await Blog.create({
+      id: BlogData.length + 1,
+      title,
+      banner,
+      des,
+      content,
+      categories,
+      tags,
+      author,
+      excerpt,
+      visible,
+      slug,
+      feature,
+      draft: true,
+    });
+
+    await post.save(); //save changes made to the user doc
+
+    //send back response
+    res.status(201).json({
       status: "success",
       post,
     });
   } catch (err) {
-    throw err;
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+const updateOnePost = async (req, res) => {
+  try {
+    const {
+      title,
+      banner,
+      content,
+      tags,
+      categories,
+      des,
+      author,
+      excerpt,
+      visible,
+      slug,
+      feature,
+      id
+    } = req.body;
+    const requiredFields = [
+      "id",
+      "title",
+      "banner",
+      "content",
+      "tags",
+      "categories",
+      "des",
+      "author",
+      "excerpt",
+      "visible",
+      "slug",
+      "feature",
+    ];
+    const validate = validatePayload(req.body, requiredFields);
+    if (!validate?.payloadIsCurrect) {
+      return {
+        status: 400,
+        message: `Missing required fields: ${validate.missingFields}`,
+      };
+    }
+    const filter = { id }; // Specify the criteria for the document to update
+    const update = {
+      $set: {
+        title,
+      banner,
+      des,
+      content,
+      categories,
+      tags,
+      author,
+      excerpt,
+      visible,
+      slug,
+      feature,
+      draft: false,
+      },
+    }; // Define the update operation
+
+    await Blog.updateOne(filter, update);
+
+    //send back response
+    res.status(201).json({
+      status: "success",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
   }
 };
 
-const deleteOnePost = async (req, res) => {
+const updateOneDraftPost = async (req, res) => {
   try {
-    const post = await Post.findByIdAndRemove(req.params.postId, {
-      authorId: req.user.id,
-    });
-    if (!post)
-      return res.status(404).json({
-        status: "Fail",
-        message: "Post with given Id not found",
-      });
-
-    if (post.authorId.toString() !== req.user.id) {
-      return res.status(401).json({
-        status: "Fail",
-        message: `You can only delete a post you created!`,
-      });
+    const {
+      title,
+      banner,
+      content,
+      tags,
+      categories,
+      des,
+      author,
+      excerpt,
+      visible,
+      slug,
+      feature,
+      id
+    } = req.body;
+    const requiredFields = [
+      "id",
+      "title",
+      "banner",
+      "content",
+      "tags",
+      "categories",
+      "des",
+      "author",
+      "excerpt",
+      "visible",
+      "slug",
+      "feature",
+    ];
+    const validate = validatePayload(req.body, requiredFields);
+    if (!validate?.payloadIsCurrect) {
+      return {
+        status: 400,
+        message: `Missing required fields: ${validate.missingFields}`,
+      };
     }
+    const filter = { id }; // Specify the criteria for the document to update
+    const update = {
+      $set: {
+        title,
+      banner,
+      des,
+      content,
+      categories,
+      tags,
+      author,
+      excerpt,
+      visible,
+      slug,
+      feature,
+      draft: true,
+      },
+    }; // Define the update operation
 
-    //delete post from 'posts' array in user the document
-    const postByUser = await User.findById(req.user._id);
-    postByUser.posts.pull(post._id);
-    await postByUser.updateOne({ posts: postByUser.posts });
+    await Blog.updateOne(filter, update);
+
+    //send back response
+    res.status(201).json({
+      status: "success",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const deactivateOnePost = async (req, res) => {
+  try {
+    const {id} = req.body;
+    const filter = { id }; // Specify the criteria for the document to update
+    const update = { $set: { inActive: true } }; // Define the update operation
+
+    await Blog.updateOne(filter, update);
+    const posts = await Blog.find();
+    //return deleted post
+    res.status(200).json({
+      status: "success",
+      message: "Post deactivate successfully",
+      posts
+    });
+  } catch (err) {
+    console.error("Error:", err);
+  res.status(500).json({
+    message: "Internal Server Error"
+  });
+  }
+};
+
+const activateOnePost = async (req, res) => {
+  try {
+    const {id} = req.body;
+    const filter = { id }; // Specify the criteria for the document to update
+    const update = { $set: { inActive: false } }; // Define the update operation
+
+    await Blog.updateOne(filter, update);
+
+    const posts = await Blog.find();
 
     //return deleted post
     res.status(200).json({
       status: "success",
-      message: "Post deleted successfully",
+      message: "Post activate successfully",
+      posts
     });
   } catch (err) {
-    throw err;
+    console.error("Error:", err);
+  res.status(500).json({
+    message: "Internal Server Error"
+  });
   }
 };
 
@@ -142,5 +536,13 @@ module.exports = {
   getOnePost,
   createNewPost,
   updateOnePost,
-  deleteOnePost,
+  deactivateOnePost,
+  activateOnePost,
+  getLatestPosts,
+  getTrendingPosts,
+  getPostsByCategory,
+  getSearchByQuery,
+  createNewDraftPost,
+  updateOneDraftPost,
+  getAllDraftPosts
 };
