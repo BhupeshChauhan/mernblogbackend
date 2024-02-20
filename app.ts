@@ -5,13 +5,13 @@ import helmet from 'helmet';
 import * as middlewares from './middlewares';
 import api from './api';
 import MessageResponse from './interfaces/MessageResponse';
-import userRoutes from './v1/routes/user';
-import postRoutes from './v1/routes/post';
-import categoriesRoutes from './v1/routes/categories';
-import uploadImgRoutes from './v1/routes/uploadImg';
-import tagsRoutes from './v1/routes/tags';
-import rolesRoutes from './v1/routes/roles';
-import connectToDB from './v1/db/db';
+import userRoutes from './routes/user';
+import postRoutes from './routes/post';
+import categoriesRoutes from './routes/categories';
+import uploadImgRoutes from './routes/uploadImg';
+import tagsRoutes from './routes/tags';
+import rolesRoutes from './routes/roles';
+import connectToDB from './db/db';
 import dotenv from 'dotenv';
 
 dotenv.config({path: './config.env'})

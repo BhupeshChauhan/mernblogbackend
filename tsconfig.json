@@ -13,6 +13,6 @@
   "include": [
     "./api/*.ts",
     "src/**/*.ts",
-    "test/**/*.ts", "index.ts",
+    "test/**/*.ts", "index.ts", "app.ts", "middlewares.ts", "api.test.ts", "app.test.ts",
   ],
 }
