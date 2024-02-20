@@ -26,7 +26,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(function (req, res, next) {
   //@ts-ignore
-  res.setHeader("Access-Control-Allow-Origin", [process.env.CLIENT_URL, process.env.ADMIN_URL]);
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET,HEAD,PUT,PATCH,POST,DELETE"
