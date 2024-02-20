@@ -31,7 +31,7 @@ const getLatestPosts = async (req, res) => {
   try {
     const {page} = req.body
     const maxLimit = 5;
-    const posts = await Blog.find({ draft: false });
+    const posts = await Blog.find({ draft: false, inActive: false });
     await Blog.find({ draft: false })
       .populate(
         "author",
@@ -69,7 +69,7 @@ const getLatestPosts = async (req, res) => {
 const getTrendingPosts = async (req, res) => {
   try {
     const maxLimit = 5;
-    await Blog.find({ draft: false })
+    await Blog.find({ draft: false, inActive: false })
       .populate(
         "author",
         "personal_info.profile_img personal_info.username personal_info.fullname"
@@ -102,7 +102,7 @@ const getTrendingPosts = async (req, res) => {
 const getPostsByCategory = async (req, res) => {
   try {
     const {category, page} = req.body
-    const filterQuery = { draft: false, categories: category }
+    const filterQuery = { draft: false, categories: category, inActive: false }
     const maxLimit = 5;
     const posts = await Blog.find(filterQuery);
     await Blog.find(filterQuery)
@@ -142,7 +142,7 @@ const getPostsByCategory = async (req, res) => {
 const getSearchByQuery = async (req, res) => {
   try {
     const {query, page} = req.body
-    const filterQuery = { draft: false, title: new RegExp(query, 'i') }
+    const filterQuery = { draft: false, title: new RegExp(query, 'i'), inActive: false }
     const maxLimit = 5;
     const posts = await Blog.find(filterQuery);
     await Blog.find(filterQuery)

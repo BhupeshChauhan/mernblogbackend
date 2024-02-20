@@ -16,6 +16,22 @@ const getAllCategories = async (req, res) => {
   }
 };
 
+const getAllCategoriesActive = async (req, res) => {
+  try {
+    const categories = await Categories.find( {inActive: false});
+
+    res.status(200).json({
+      status: "success",
+      categories,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Internal Server Error"
+    });
+  }
+};
+
 const getOneCategory = async (req, res) => {
   try {
     const categories = await Categories.findById(req.params.categoriesId)
@@ -162,5 +178,6 @@ module.exports = {
   createNewCategory,
   updateOneCategory,
   deactivateOneCategory,
-  activateOneCategory
+  activateOneCategory,
+  getAllCategoriesActive
 };
