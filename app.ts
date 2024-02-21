@@ -1,7 +1,7 @@
 import express from 'express';
 import morgan from 'morgan';
 import helmet from 'helmet';
-
+import cors from 'cors'
 import * as middlewares from './middlewares';
 import api from './api';
 import MessageResponse from './interfaces/MessageResponse';
@@ -24,21 +24,8 @@ connectToDB();
 app.use(morgan('dev'));
 app.use(helmet());
 app.use(express.json());
-app.use(function (req, res, next) {
+app.use(cors({origin:true,credentials: true}));
 
-  var allowedDomains = ['https://next-mern-blog.vercel.app/', "https://mernblog-admin.vercel.app/" ];
-  var origin: any = req.headers.origin;
-  if(allowedDomains.indexOf(origin) > -1){
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type, Accept');
-  //@ts-ignore
-  res.setHeader('Access-Control-Allow-Credentials', true);
-
-  next();
-})
 app.get<{}, MessageResponse>('/', (req, res) => {
   res.json({
     message: '🦄🌈✨👋🌎🌍🌏✨🌈🦄',
