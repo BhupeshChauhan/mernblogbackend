@@ -26,7 +26,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(function (req, res, next) {
 
-  var allowedDomains = [process.env.CLIENT_URL, process.env.ADMIN_URL ];
+  var allowedDomains = ['https://next-mern-blog.vercel.app/', "https://mernblog-admin.vercel.app/" ];
   var origin: any = req.headers.origin;
   if(allowedDomains.indexOf(origin) > -1){
     res.setHeader('Access-Control-Allow-Origin', origin);
