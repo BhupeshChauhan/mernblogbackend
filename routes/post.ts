@@ -1,5 +1,20 @@
-import express from 'express';
-import { activateOnePost, createNewDraftPost, createNewPost, deactivateOnePost, getAllDraftPosts, getAllPosts, getLatestPosts, getOnePost, getPostsByCategory, getSearchByQuery, getTrendingPosts, updateOneDraftPost, updateOnePost } from '../controllers/post';
+import express from "express";
+import {
+  activateOnePost,
+  createNewDraftPost,
+  createNewPost,
+  deactivateOnePost,
+  getAllDraftPosts,
+  getAllFeaturedPosts,
+  getAllPosts,
+  getLatestPosts,
+  getOnePost,
+  getPostsByCategory,
+  getSearchByQuery,
+  getTrendingPosts,
+  updateOneDraftPost,
+  updateOnePost,
+} from "../controllers/post";
 
 const postRoutes = express.Router();
 
@@ -8,6 +23,8 @@ postRoutes.get("/", getAllPosts);
 postRoutes.get("/draft", getAllDraftPosts);
 
 postRoutes.post("/searchbycategory", getPostsByCategory);
+
+postRoutes.get("/featured", getAllFeaturedPosts);
 
 postRoutes.post("/searchbyquery", getSearchByQuery);
 

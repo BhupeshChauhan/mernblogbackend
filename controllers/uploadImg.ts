@@ -1,54 +1,39 @@
 import Gallery from '../model/gallery'
-import aws from 'aws-sdk'
-import {nanoid} from "nanoid";
-
-//AwsClient
-export const s3 = new aws.S3({
-  region: "ap-south-1",
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
-
-export const generateUploadUrl = async (req: any, res: any) => {
-  try {
-    const date: any = new Date();
-    const imgName = `${nanoid()}-${date.getTime().jpeg}`;
-  
-    const uploadUrl = await s3.getSignedUrlPromise("putObject", {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
-      Key: imgName,
-      Expires: 1000,
-      ContentType: "image/jpeg",
-    });
-    res.status(200).json({
-      uploadUrl: uploadUrl
-    });
-  } catch (err) {
-    throw err;
-  }
-};
+import cloudinary from '../utils/cloudinary'
+import fs from 'fs'
 
 export const uploadNewImg = async (req: any, res: any) => {
   try {
-    const { filename, contentType, size, imageUrl, alt } = req.body;
+    cloudinary.uploader.upload(req.file.path, async function (err: any, result: any){
+      if(err) {
+        console.log(err);
+        return res.status(500).json({
+          success: false,
+          message: "Error"
+        })
+      }
 
+    fs.unlinkSync(req.file.path); // remove temporary file from filesystem
     const gallery = await Gallery.create({
-      filename,
-      contentType,
-      size,
+      filename: result.original_filename,
+      contentType: result.format,
+      size: result.bytes,
       uploadDate: new Date(),
-      imageUrl,
+      imageUrl: result.url,
       metadata: {
-        title: filename,
-        alt: alt
+        title: result.original_filename,
+        alt: result.original_filename
       },
     });
+      res.status(200).json({
+        success: true,
+        message:"Uploaded!",
+        gallery
+      })
+    })
+    
+    
 
-    //send back response
-    res.status(201).json({
-      status: "success",
-      gallery,
-    });
   } catch (err: any) {
     res.status(500).json({
       status: "success",

@@ -158,7 +158,7 @@ export const deactivateOneUser = async (req: any, res: any) => {
 
     await User.updateOne(filter, update);
     const UserData = await User.find();
-    console.log(filter, update)
+    
     //return deleted post
     res.status(200).json({
       message: "User deactivate successfully",

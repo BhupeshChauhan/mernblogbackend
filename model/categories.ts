@@ -24,6 +24,7 @@ const categoriesSchema = new mongoose.Schema(
       default: Date.now,
     },
     inActive: Boolean,
+    type: [String]
   },
   { timestamps: true },
 );

@@ -27,6 +27,40 @@ export const getAllDraftPosts = async (req: any, res: any) => {
   }
 };
 
+export const getAllFeaturedPosts = async (req: any, res: any) => {
+  try {
+    const filterQuery = { draft: false, feature: "Feature on Home", inActive: false }
+    const maxLimit = 5;
+    await Blog.find(filterQuery)
+      .populate(
+        "author",
+        "personal_info.profile_img personal_info.username personal_info.fullname"
+      )
+      .sort({ publishedAt: -1 })
+      .select("id title des banner activity categories publishedAt")
+      .limit(maxLimit)
+      .then((blogs: any) => {
+        res.status(200).json({
+          status: "success",
+          blogs
+        });
+      })
+      .catch((err: any) => {
+        console.error(err);
+        res.status(500).json({
+          status: "error",
+          message: "Internal Server Error",
+        });
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export const getLatestPosts = async (req: any, res: any) => {
   try {
     const {page} = req.body
@@ -260,6 +294,7 @@ export const createNewPost = async (req: any, res: any) => {
       slug,
       feature,
       draft: false,
+      inActive: false
     });
 
     await post.save(); //save changes made to the user doc
@@ -328,6 +363,7 @@ export const createNewDraftPost = async (req: any, res: any) => {
       slug,
       feature,
       draft: true,
+      inActive: false
     });
 
     await post.save(); //save changes made to the user doc
