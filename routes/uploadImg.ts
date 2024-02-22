@@ -1,10 +1,9 @@
 import express from 'express';
-import { generateUploadUrl, getAllImages, uploadNewImg } from '../controllers/uploadImg';
-
+import { getAllImages, uploadNewImg } from '../controllers/uploadImg';
+import {upload} from '../middleware/multer'
 const uploadImgRoutes = express.Router();
 
-uploadImgRoutes.get("/get-upload-url", generateUploadUrl);
 uploadImgRoutes.get("/images", getAllImages);
-uploadImgRoutes.post("/upload-image", uploadNewImg);
+uploadImgRoutes.post("/upload-image", upload.single('image'), uploadNewImg);
 
 export default uploadImgRoutes;

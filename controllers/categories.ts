@@ -17,6 +17,36 @@ export const getAllCategories = async (req: any, res: any) => {
   }
 };
 
+export const getAllByType = async (req: any, res: any) => {
+  try {
+    const {page, type} = req.body
+    const maxLimit = 4;
+    const posts = await Categories.find({ type: type, inActive: false });
+    await Categories.find({ type: type, inActive: false }).skip((page - 1) * maxLimit)
+    .limit(maxLimit)
+    .then((categories: any) => {
+      res.status(200).json({
+        status: "success",
+        response: {
+          categories,
+          total_length: posts.length,
+        },
+      });
+    })
+    .catch((err: any) => {
+      console.error(err);
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+      });
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Internal Server Error"
+    });
+  }
+};
 export const getAllCategoriesActive = async (req: any, res: any) => {
   try {
     const categories = await Categories.find( {inActive: false});
@@ -51,7 +81,7 @@ export const getOneCategory = async (req: any, res: any) => {
 
 export const createNewCategory = async (req: any, res: any) => {
   try {
-    const requiredFields = ["name", "slug", "description", "featuredImage"];
+    const requiredFields = ["name", "slug", "description", "featuredImage", 'type'];
     const validate = validatePayload(req.body, requiredFields);
     if (!validate?.payloadIsCurrect) {
       return {
@@ -59,7 +89,7 @@ export const createNewCategory = async (req: any, res: any) => {
         message: `Missing required fields: ${validate.missingFields}`,
       };
     }
-    const { name, slug, description, featuredImage } = req.body;
+    const { name, slug, description, featuredImage, type } = req.body;
 
     const categoriesData = await Categories.find();
 
@@ -69,6 +99,8 @@ export const createNewCategory = async (req: any, res: any) => {
       slug,
       description,
       featuredImage,
+      inActive: false,
+      type
     });
 
     await newcategories.save();
@@ -111,6 +143,7 @@ export const updateOneCategory = async (req: any, res: any) => {
         description: description,
         slug: slug,
         featuredImage: featuredImage,
+        inActive: false
       },
     }; // Define the update operation
 

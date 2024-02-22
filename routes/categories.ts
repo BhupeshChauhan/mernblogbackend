@@ -1,11 +1,13 @@
 import express from 'express';
-import { activateOneCategory, createNewCategory, deactivateOneCategory, getAllCategories, getAllCategoriesActive, getOneCategory, updateOneCategory } from '../controllers/categories';
+import { activateOneCategory, createNewCategory, deactivateOneCategory, getAllCategories, getAllCategoriesActive, getAllByType, getOneCategory, updateOneCategory } from '../controllers/categories';
 
 const categoriesRoutes = express.Router();
 
 categoriesRoutes.get("/", getAllCategories);
 
 categoriesRoutes.get("/active", getAllCategoriesActive);
+
+categoriesRoutes.post("/getbytype", getAllByType);
 
 categoriesRoutes.get("/:categoriesId", getOneCategory);
 
