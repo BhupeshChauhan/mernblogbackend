@@ -1,14 +1,54 @@
 import Categories from '../model/categories'
 import { validatePayload } from '../utils'
 
+export const getCategoriesList = async (req: any, res: any) => {
+  try {
+      const data = await Categories.find({inActive: false})
+      res.status(200).json({
+        status: "success",
+        data,
+      });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Internal Server Error"
+    });
+  }
+};
 export const getAllCategories = async (req: any, res: any) => {
   try {
-    const categories = await Categories.find();
+    const { maxLimit, page, query } = req.body;
 
-    res.status(200).json({
-      status: "success",
-      categories,
-    });
+    const categoryList = await Categories.find();
+    if (query && query.length > 0) {
+      const filterQuery = { name: new RegExp(query, "i")};
+      const data = await Categories.find(filterQuery)
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: categoryList.length,
+          pageSize: maxLimit,
+        },
+      });
+    } else {
+      const data = await Categories.find()
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: categoryList.length,
+          pageSize: maxLimit,
+        },
+      });
+    }
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({

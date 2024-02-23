@@ -1,13 +1,15 @@
 import express from 'express';
-import { activateOneTag, createNewTag, deactivateOneTag, getAllTags, getOneTag, updateOneTag } from '../controllers/tags';
+import { activateOneTag, createNewTag, deactivateOneTag, getAllTags, getOneTag, getTagsList, updateOneTag } from '../controllers/tags';
 
 const tagsRoutes = express.Router();
 
-tagsRoutes.get("/", getAllTags);
+tagsRoutes.get("/", getTagsList);
+
+tagsRoutes.post("/", getAllTags);
 
 tagsRoutes.get("/:tagsId", getOneTag);
 
-tagsRoutes.post("/", createNewTag);
+tagsRoutes.post("/create", createNewTag);
 
 tagsRoutes.patch("/:tagsId", updateOneTag);
 

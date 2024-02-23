@@ -18,9 +18,9 @@ import {
 
 const postRoutes = express.Router();
 
-postRoutes.get("/", getAllPosts);
+postRoutes.post("/", getAllPosts);
 
-postRoutes.get("/draft", getAllDraftPosts);
+postRoutes.post("/draft", getAllDraftPosts);
 
 postRoutes.post("/searchbycategory", getPostsByCategory);
 
@@ -34,7 +34,7 @@ postRoutes.get("/trending", getTrendingPosts);
 
 postRoutes.get("/:postsId", getOnePost);
 
-postRoutes.post("/", createNewPost);
+postRoutes.post("/create", createNewPost);
 
 postRoutes.post("/draft", createNewDraftPost);
 

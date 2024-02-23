@@ -3,14 +3,56 @@ import Roles from '../model/roles'
 import ModulePermissions from '../model/modulePermissions'
 import { validatePayload, modulePermissionsFunc, modulePermissionsCnvrt } from '../utils'
 
+export const getRolesList = async (req: any, res: any) => {
+  try {
+    const data = await Roles.find({inActive: false})
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export const getAllRoles = async (req: any, res: any) => {
   try {
-    const RoleData = await Roles.find();
+    const { maxLimit, page, query } = req.body;
 
-    res.status(200).json({
-      status: "success",
-      RoleData,
-    });
+    const postList = await Roles.find();
+    if (query && query.length > 0) {
+      const filterQuery = { title: new RegExp(query, "i") };
+      const data = await Roles.find(filterQuery)
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: postList.length,
+          pageSize: maxLimit,
+        },
+      });
+    } else {
+      const data = await Roles.find()
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: postList.length,
+          pageSize: maxLimit,
+        },
+      });
+    }
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({
@@ -81,7 +123,7 @@ export async function activateModulePermissions(id: any) {
 
 export const getOneRole = async (req: any, res: any) => {
   try {
-    const RoleData = await Roles.findById(req.params.roleId);
+    const RoleData: any = await Roles.findById(req.params.roleId);
 
     const modulePermissions = await ModulePermissions.findOne( {id: RoleData.id } );
 

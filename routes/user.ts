@@ -1,7 +1,7 @@
 //import express
 import express from 'express';
 import { login, signup } from '../auth/auth';
-import { activateOneUser, createNewUser, deactivateOneUser, getAllUsers, getOneUser, updateOneUser } from '../controllers/user';
+import { activateOneUser, createNewUser, deactivateOneUser, getAllClientUsers, getAllUsers, getOneUser, updateOneUser } from '../controllers/user';
 
 //create router
 const userRoutes = express.Router();
@@ -14,11 +14,13 @@ userRoutes.post("/signup", signup)
 
 userRoutes.post("/login", login)
 
-userRoutes.get("/", getAllUsers);
+userRoutes.post("/", getAllUsers);
+
+userRoutes.post("/client", getAllClientUsers);
 
 userRoutes.get("/:userId", getOneUser);
 
-userRoutes.post("/", createNewUser);
+userRoutes.post("/create", createNewUser);
 
 userRoutes.patch("/:userId", updateOneUser);
 

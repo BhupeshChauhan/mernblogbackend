@@ -84,8 +84,9 @@ const UserSchema = new Schema(
       type: Boolean,
       required: true,
     },
-    roleId: {
-      type: Number,
+    roles: {
+      type: Schema.Types.ObjectId,
+      ref: 'roles'
     },
     blogs: {
       type: [Schema.Types.ObjectId],
