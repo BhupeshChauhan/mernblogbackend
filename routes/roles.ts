@@ -1,13 +1,15 @@
 import express from 'express';
-import { activateOneRole, createNewRole, deactivateOneRole, getAllRoles, getOneRole, updateOneRole } from '../controllers/roles';
+import { activateOneRole, createNewRole, deactivateOneRole, getAllRoles, getOneRole, getRolesList, updateOneRole } from '../controllers/roles';
 
 const rolesRoutes = express.Router();
 
-rolesRoutes.get("/", getAllRoles);
+rolesRoutes.get("/", getRolesList);
+
+rolesRoutes.post("/", getAllRoles);
 
 rolesRoutes.get("/:roleId", getOneRole);
 
-rolesRoutes.post("/", createNewRole);
+rolesRoutes.post("/create", createNewRole);
 
 rolesRoutes.patch("/:roleId", updateOneRole);
 

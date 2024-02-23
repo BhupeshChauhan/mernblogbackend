@@ -5,7 +5,7 @@ import Roles from '../model/roles'
 export const getRolesData = async (UserData: any) => {
   let newUserData: any = [];
   for (const item of UserData) {
-    const RolesData = await Roles.findOne({ id: Number(item?.roleId) });
+    const RolesData = await Roles.findOne({ id: Number(item?.roles) });
     newUserData = [...newUserData, { ...item, role: RolesData?.name }];
   }
   return newUserData;
@@ -14,12 +14,85 @@ export const getRolesData = async (UserData: any) => {
 export const getAllUsers = async (req: any, res: any) => {
   // *** ADD ***
   try {
-    const UserData = await User.find();
-    let newUserData = await getRolesData(JSON.parse(JSON.stringify(UserData)));
-    res.status(200).json({
-      status: "success",
-      UserData: newUserData,
+    const { maxLimit, page, query } = req.body;
+
+    const categoryList = await User.find();
+    if (query && query.length > 0) {
+      const filterQuery = { "personal_info.fullname": new RegExp(query, "i")};
+      const data = await User.find(filterQuery)
+        .populate("roles", "name description id")
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: categoryList.length,
+          pageSize: maxLimit,
+        },
+      });
+    } else {
+      const data = await User.find()
+      .populate("roles", "name description id")
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: categoryList.length,
+          pageSize: maxLimit,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
     });
+  }
+};
+
+export const getAllClientUsers = async (req: any, res: any) => {
+  // *** ADD ***
+  try {
+    const { maxLimit, page, query } = req.body;
+
+    const categoryList = await User.find();
+    if (query && query.length > 0) {
+      const filterQuery = { "personal_info.fullname": new RegExp(query, "i"), client: true};
+      const data = await User.find(filterQuery)
+        .populate("roles", "name description id")
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: categoryList.length,
+          pageSize: maxLimit,
+        },
+      });
+    } else {
+      const data = await User.find({ client: true})
+      .populate("roles", "name description id")
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: categoryList.length,
+          pageSize: maxLimit,
+        },
+      });
+    }
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({
@@ -32,7 +105,7 @@ export const getOneUser = async (req: any, res: any) => {
   try {
     const UserData: any = await User.findById(req.params.userId);
     const RolesData = await Roles.findOne({
-      id: Number(UserData?.roleId),
+      id: Number(UserData?.roles),
     });
 
     delete UserData.password;
@@ -78,7 +151,7 @@ export const createNewUser = async (req: any, res: any) => {
       });
     }
 
-    const RolesData = await Roles.findOne({ name: role });
+    const RolesData: any = await Roles.findOne({ name: role });
     const UserData = await User.find();
 
     const newUser = new User({
@@ -92,7 +165,7 @@ export const createNewUser = async (req: any, res: any) => {
         inActive: false,
         username: name + Math.random().toString(),
       },
-      roleId: RolesData.id,
+      roles: RolesData.id,
       client: false,
     });
 
@@ -121,7 +194,7 @@ export const updateOneUser = async (req: any, res: any) => {
       };
     }
     const { id, name, email, role, bio, profilePicture } = await req.body;
-    const RolesData = await Roles.findOne({ name: role });
+    const RolesData: any = await Roles.findOne({ name: role });
     const filter = { id }; // Specify the criteria for the document to update
 
     const update = {
@@ -132,7 +205,7 @@ export const updateOneUser = async (req: any, res: any) => {
           profile_img: profilePicture,
           email,
         },
-        roleId: RolesData.id,
+        roles: RolesData.id,
         client: false,
       },
     }; // Define the update operation

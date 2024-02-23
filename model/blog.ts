@@ -66,6 +66,20 @@ const blogSchema = new Schema({
             default: 0
         },
     },
+    seo: {
+        focus_keyword: {
+            type: String,
+        },
+        seo_title: {
+            type: String,
+        },
+        meta_description: {
+            type: String,
+        },
+        canonical_url: {
+            type: String,
+        },
+    },
     comments: {
         type: [Schema.Types.ObjectId],
         ref: 'comments'

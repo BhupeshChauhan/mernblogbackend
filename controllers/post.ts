@@ -1,35 +1,99 @@
-import Blog from '../model/blog'
-import { validatePayload } from '../utils'
+import Blog from "../model/blog";
+import { validatePayload } from "../utils";
 
 export const getAllPosts = async (req: any, res: any) => {
   try {
-    const posts = await Blog.find();
+    const { maxLimit, page, query } = req.body;
 
-    res.status(200).json({
-      status: "success",
-      posts,
-    });
+    const postList = await Blog.find();
+    if (query && query.length > 0) {
+      const filterQuery = { title: new RegExp(query, "i") };
+      const data = await Blog.find(filterQuery)
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: postList.length,
+          pageSize: maxLimit,
+        },
+      });
+    } else {
+      const data = await Blog.find()
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: postList.length,
+          pageSize: maxLimit,
+        },
+      });
+    }
   } catch (err) {
-    throw err;
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
   }
 };
 
 export const getAllDraftPosts = async (req: any, res: any) => {
   try {
-    const posts = await Blog.find({ draft: true });
+    const { maxLimit, page, query } = req.body;
 
-    res.status(200).json({
-      status: "success",
-      posts,
-    });
+    const postList = await Blog.find();
+    if (query && query.length > 0) {
+      const filterQuery = { draft: true, title: new RegExp(query, "i")};
+      const data = await Blog.find(filterQuery)
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: postList.length,
+          pageSize: maxLimit,
+        },
+      });
+    } else {
+      const data = await Blog.find({draft: true})
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit);
+
+      res.status(200).json({
+        status: "success",
+        data,
+        pagination: {
+          page,
+          pagelength: postList.length,
+          pageSize: maxLimit,
+        },
+      });
+    }
   } catch (err) {
-    throw err;
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+    });
   }
 };
 
 export const getAllFeaturedPosts = async (req: any, res: any) => {
   try {
-    const filterQuery = { draft: false, feature: "Feature on Home", inActive: false }
+    const filterQuery = {
+      draft: false,
+      feature: "Feature on Home",
+      inActive: false,
+    };
     const maxLimit = 5;
     await Blog.find(filterQuery)
       .populate(
@@ -42,7 +106,7 @@ export const getAllFeaturedPosts = async (req: any, res: any) => {
       .then((blogs: any) => {
         res.status(200).json({
           status: "success",
-          blogs
+          blogs,
         });
       })
       .catch((err: any) => {
@@ -63,7 +127,7 @@ export const getAllFeaturedPosts = async (req: any, res: any) => {
 
 export const getLatestPosts = async (req: any, res: any) => {
   try {
-    const {page} = req.body
+    const { page } = req.body;
     const maxLimit = 5;
     const posts = await Blog.find({ draft: false, inActive: false });
     await Blog.find({ draft: false })
@@ -108,7 +172,11 @@ export const getTrendingPosts = async (req: any, res: any) => {
         "author",
         "personal_info.profile_img personal_info.username personal_info.fullname"
       )
-      .sort({ publishedAt: -1, 'activity.total_reads': -1, 'activity.total_likes': -1 })
+      .sort({
+        publishedAt: -1,
+        "activity.total_reads": -1,
+        "activity.total_likes": -1,
+      })
       .select("id title publishedAt")
       .limit(maxLimit)
       .then((blogs: any) => {
@@ -135,8 +203,8 @@ export const getTrendingPosts = async (req: any, res: any) => {
 
 export const getPostsByCategory = async (req: any, res: any) => {
   try {
-    const {category, page} = req.body
-    const filterQuery = { draft: false, categories: category, inActive: false }
+    const { category, page } = req.body;
+    const filterQuery = { draft: false, categories: category, inActive: false };
     const maxLimit = 5;
     const posts = await Blog.find(filterQuery);
     await Blog.find(filterQuery)
@@ -175,8 +243,12 @@ export const getPostsByCategory = async (req: any, res: any) => {
 
 export const getSearchByQuery = async (req: any, res: any) => {
   try {
-    const {query, page} = req.body
-    const filterQuery = { draft: false, title: new RegExp(query, 'i'), inActive: false }
+    const { query, page } = req.body;
+    const filterQuery = {
+      draft: false,
+      title: new RegExp(query, "i"),
+      inActive: false,
+    };
     const maxLimit = 5;
     const posts = await Blog.find(filterQuery);
     await Blog.find(filterQuery)
@@ -216,9 +288,9 @@ export const getSearchByQuery = async (req: any, res: any) => {
 export const getOnePost = async (req: any, res: any) => {
   try {
     const post: any = await Blog.findById(req.params.postsId).populate(
-        "author",
-        "personal_info.profile_img personal_info.username personal_info.fullname"
-      );
+      "author",
+      "personal_info.profile_img personal_info.username personal_info.fullname"
+    );
 
     if (!post) {
       return res.status(404).json({
@@ -258,6 +330,10 @@ export const createNewPost = async (req: any, res: any) => {
       visible,
       slug,
       feature,
+      focusKeyword,
+      seoTitle,
+      metaDescription,
+      canonicalUrl
     } = req.body;
     const requiredFields = [
       "title",
@@ -272,6 +348,11 @@ export const createNewPost = async (req: any, res: any) => {
       "slug",
       "feature",
     ];
+    console.log(
+      focusKeyword,
+      seoTitle,
+      metaDescription,
+      canonicalUrl)
     const validate = validatePayload(req.body, requiredFields);
     if (!validate?.payloadIsCurrect) {
       return {
@@ -294,7 +375,13 @@ export const createNewPost = async (req: any, res: any) => {
       slug,
       feature,
       draft: false,
-      inActive: false
+      inActive: false,
+      seo: {
+        focus_keyword: focusKeyword,
+        seo_title: seoTitle,
+        meta_description: metaDescription,
+        canonical_url: canonicalUrl
+      }
     });
 
     await post.save(); //save changes made to the user doc
@@ -327,6 +414,10 @@ export const createNewDraftPost = async (req: any, res: any) => {
       visible,
       slug,
       feature,
+      focusKeyword,
+      seoTitle,
+      metaDescription,
+      canonicalUrl
     } = req.body;
     const requiredFields = [
       "title",
@@ -363,7 +454,13 @@ export const createNewDraftPost = async (req: any, res: any) => {
       slug,
       feature,
       draft: true,
-      inActive: false
+      inActive: false,
+      seo: {
+        focus_keyword: focusKeyword,
+        seo_title: seoTitle,
+        meta_description: metaDescription,
+        canonical_url: canonicalUrl
+      }
     });
 
     await post.save(); //save changes made to the user doc
@@ -395,7 +492,7 @@ export const updateOnePost = async (req: any, res: any) => {
       visible,
       slug,
       feature,
-      id
+      id,
     } = req.body;
     const requiredFields = [
       "id",
@@ -422,17 +519,17 @@ export const updateOnePost = async (req: any, res: any) => {
     const update = {
       $set: {
         title,
-      banner,
-      des,
-      content,
-      categories,
-      tags,
-      author,
-      excerpt,
-      visible,
-      slug,
-      feature,
-      draft: false,
+        banner,
+        des,
+        content,
+        categories,
+        tags,
+        author,
+        excerpt,
+        visible,
+        slug,
+        feature,
+        draft: false,
       },
     }; // Define the update operation
 
@@ -465,7 +562,7 @@ export const updateOneDraftPost = async (req: any, res: any) => {
       visible,
       slug,
       feature,
-      id
+      id,
     } = req.body;
     const requiredFields = [
       "id",
@@ -492,17 +589,17 @@ export const updateOneDraftPost = async (req: any, res: any) => {
     const update = {
       $set: {
         title,
-      banner,
-      des,
-      content,
-      categories,
-      tags,
-      author,
-      excerpt,
-      visible,
-      slug,
-      feature,
-      draft: true,
+        banner,
+        des,
+        content,
+        categories,
+        tags,
+        author,
+        excerpt,
+        visible,
+        slug,
+        feature,
+        draft: true,
       },
     }; // Define the update operation
 
@@ -523,7 +620,7 @@ export const updateOneDraftPost = async (req: any, res: any) => {
 
 export const deactivateOnePost = async (req: any, res: any) => {
   try {
-    const {id} = req.body;
+    const { id } = req.body;
     const filter = { id }; // Specify the criteria for the document to update
     const update = { $set: { inActive: true } }; // Define the update operation
 
@@ -533,19 +630,19 @@ export const deactivateOnePost = async (req: any, res: any) => {
     res.status(200).json({
       status: "success",
       message: "Post deactivate successfully",
-      posts
+      posts,
     });
   } catch (err) {
     console.error("Error:", err);
-  res.status(500).json({
-    message: "Internal Server Error"
-  });
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
   }
 };
 
 export const activateOnePost = async (req: any, res: any) => {
   try {
-    const {id} = req.body;
+    const { id } = req.body;
     const filter = { id }; // Specify the criteria for the document to update
     const update = { $set: { inActive: false } }; // Define the update operation
 
@@ -557,12 +654,12 @@ export const activateOnePost = async (req: any, res: any) => {
     res.status(200).json({
       status: "success",
       message: "Post activate successfully",
-      posts
+      posts,
     });
   } catch (err) {
     console.error("Error:", err);
-  res.status(500).json({
-    message: "Internal Server Error"
-  });
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
   }
 };
